@@ -1,0 +1,53 @@
+name: Scrape and Load
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      where:
+        description: WHERE filter
+        required: false
+      what:
+        description: WHAT filter string
+        required: false
+      when:
+        description: cutoff date YYYY-MM-DD
+        required: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+      - name: Run scraper CLI
+        env:
+          WHERE: ${{ github.event.inputs.where || '' }}
+          WHAT: ${{ github.event.inputs.what || '' }}
+          WHEN: ${{ github.event.inputs.when || '' }}
+        run: |
+          python -m scraper.cli --where "$WHERE" --what "$WHAT" --when "$WHEN" --out data/listings.json
+      - name: Generate SQL
+        run: |
+          python scripts/run_etl.py
+      - name: Upload SQL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-sql
+          path: data/upload.sql
+      - name: Execute D1 SQL
+        if: env.CF_D1_DB_ID != ''
+        env:
+          CF_D1_DB_ID: ${{ secrets.CF_D1_DB_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          npm -g i wrangler
+          wrangler d1 execute $CF_D1_DB_ID --command "$(cat data/upload.sql)"

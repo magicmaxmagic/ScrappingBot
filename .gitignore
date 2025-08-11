@@ -1,0 +1,96 @@
+# macOS
+.DS_Store
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.swp
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node / JS
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.yarn-cache/
+.yarnrc.yml
+.eslintcache
+
+# Vite/Build
+**/dist/
+**/build/
+**/.vite/
+**/.vite-cache/
+**/.parcel-cache/
+
+# Cloudflare Workers / Wrangler (local state)
+workers/.wrangler/
+workers/.dev.vars
+.miniflare-*
+.mf
+
+# Logs & PIDs
+logs/
+*.log
+.scraper.pid
+frontend/.dev.pid
+workers/.dev.pid
+
+# Data outputs & cache (generated)
+data/html/
+data/listings.json
+data/upload.sql
+data/report.json
+data/last_run.json
+data/geocache.json
+data/cache/
+data/tmp/
+*.sqlite
+*.db
+*.tmp
+
+# Playwright
+playwright-report/
+test-results/
+.playwright/
+
+# Env files (never commit secrets)
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+
+# Archives
+*.zip
+*.tar
+*.tgz
+*.gz
+__pycache__/
+.venv/
+*.pyc
+.data/
+results/
+.eggs/
+.Python
+.env
+*.egg-info/
+playwright/.cache/
+data/html/
+data/geocache.json

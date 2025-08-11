@@ -1,0 +1,8 @@
+sources:
+  - name: local-test-realestate
+    use_js: false
+    start_urls:
+      - file:///Users/maxencelegendre/project/ScrappingBot/data/test_site/index.html
+    sitemaps: []
+    listing_patterns:
+      - "listing-\\d+\\.html$"

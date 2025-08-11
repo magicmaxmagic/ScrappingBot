@@ -1,0 +1,3 @@
+# Optional: only if you want LLM fallback locally
+# Prefer a version with prebuilt macOS arm64 wheels to avoid heavy local compilation
+llama-cpp-python>=0.3.0

@@ -1,0 +1,99 @@
+name: Crawl and Load
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # nightly
+  workflow_dispatch: {}
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system deps for Playwright
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-0 libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libgbm1 libpango-1.0-0 libcairo2 libasound2
+      - name: Install Python deps
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Install wrangler CLI
+        run: |
+          npm install -g wrangler@3
+      - name: Run crawl
+        env:
+          LOG_LEVEL: INFO
+        run: |
+          mkdir -p data
+          python -m scrapy crawl site_generic -s LOG_LEVEL=INFO -s 'FEEDS={"data/listings.json":{"format":"json","encoding":"utf8","overwrite":true}}'
+      - name: Upload HTML artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-html
+          path: data/html
+      - name: Run ETL and generate SQL + report
+        run: |
+          python - <<'PY'
+          import json, orjson
+          from etl.normalize import to_sqm, normalize_currency
+          from etl.dedupe import dedupe_records, canonical_id
+          from extractor.schema import validate_listing
+          from etl.geocode import geocode_address, neighborhood_from_geojson
+          from pathlib import Path
+          recs = json.loads(Path('data/listings.json').read_text()) if Path('data/listings.json').exists() else []
+          total = len(recs)
+          cleaned = []
+          for r in recs:
+              r['currency'] = normalize_currency(r.get('currency'))
+              if r.get('area') and r.get('area_unit'):
+                  r['area_sqm'] = to_sqm(r['area'], r['area_unit'])
+              try:
+                  v = validate_listing(r)
+                  cleaned.append(v.model_dump())
+              except Exception as e:
+                  print(orjson.dumps({"event":"validation_error","url":r.get('url'),"error":str(e)}).decode())
+          cleaned_count = len(cleaned)
+          # Geocode if address present and coords missing
+          for r in cleaned:
+              if not r.get('latitude') and r.get('address'):
+                  gc = geocode_address(r['address'])
+                  if gc:
+                      r['latitude'], r['longitude'] = gc
+          # Neighborhood join if geojson provided
+          gj_path = Path('config/neighborhoods.geojson')
+          if gj_path.exists():
+              for r in cleaned:
+                  if r.get('latitude') and r.get('longitude'):
+                      n = neighborhood_from_geojson(r['latitude'], r['longitude'], str(gj_path))
+                      if n:
+                          r['neighborhood'] = n
+          deduped = dedupe_records(cleaned)
+          deduped_count = len(deduped)
+          from etl.load_d1 import generate_upsert_sql
+          sql = generate_upsert_sql(deduped)
+          Path('data/upload.sql').write_text(sql)
+          report = {"total": total, "cleaned": cleaned_count, "deduped": deduped_count}
+          Path('data/report.json').write_text(orjson.dumps(report).decode())
+          print(orjson.dumps({"event":"report","report":report}).decode())
+          PY
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extraction-report
+          path: data/report.json
+      - name: Upload SQL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-sql
+          path: data/upload.sql
+      - name: Execute SQL to D1 (optional)
+        if: ${{ secrets.CF_D1_DB != '' }}
+        env:
+          CF_D1_DB: ${{ secrets.CF_D1_DB }}
+          CF_WRANGLER_PROFILE: ${{ secrets.CF_WRANGLER_PROFILE }}
+        run: |
+          wrangler d1 execute "$CF_D1_DB" --command "$(cat data/upload.sql)" ${CF_WRANGLER_PROFILE:+--profile $CF_WRANGLER_PROFILE}

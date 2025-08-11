@@ -1,0 +1,17 @@
+name = "estate-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+# add default vars here if needed
+
+[[d1_databases]]
+binding = "DB"
+database_name = "estate-db"
+database_id = "${DB_ID}"
+preview_database_id = "local"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "${KV_ID}"
+preview_id = "local"
