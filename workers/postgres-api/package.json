@@ -1,0 +1,21 @@
+{
+  "name": "postgres-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for PostgreSQL real estate data",
+  "main": "src/worker.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230518.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.6.0",
+    "@supabase/supabase-js": "^2.38.0"
+  }
+}

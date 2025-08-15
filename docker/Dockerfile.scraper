@@ -1,0 +1,66 @@
+# Multi-stage build for Python Scraper with Playwright
+FROM python:3.11-slim as base
+
+# Install system dependencies and Playwright dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2 \
+    fonts-liberation \
+    libappindicator3-1 \
+    libxtst6 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt database/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright
+RUN pip install playwright==1.40.0
+
+# Copy application code
+COPY scraper/ ./scraper/
+COPY database/ ./database/
+COPY etl/ ./etl/
+COPY config/ ./config/
+COPY scripts/ ./scripts/
+
+# Create non-root user
+RUN groupadd -r scraper && useradd -r -g scraper scraper
+RUN chown -R scraper:scraper /app
+RUN mkdir -p /app/logs && chown scraper:scraper /app/logs
+
+# Create home directory for scraper user
+RUN mkdir -p /home/scraper && chown scraper:scraper /home/scraper
+
+# Switch to non-root user and install browsers
+USER scraper
+
+# Install Playwright browsers as the scraper user
+RUN playwright install chromium firefox
+
+# Set up environment - try without PLAYWRIGHT_BROWSERS_PATH
+# Instead, let Playwright use its default location
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import asyncio; from database.postgres_manager import PostgreSQLManager; asyncio.run(PostgreSQLManager().init_pool())"
+
+# Default command runs enhanced scraper
+CMD ["python", "database/scraper_adapter.py", "--where", "Montreal", "--what", "condo"]

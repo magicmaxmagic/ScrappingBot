@@ -1,14 +1,29 @@
+# ====================
+# ScrappingBot .gitignore
+# ====================
+
 # macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Editors/IDEs
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+.vim/
+.netrwhist
 
 # Python
 .venv/
 venv/
+env/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -21,8 +36,16 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+.tox/
+.nox/
+.cache/
+nosetests.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pdm.toml
 
-# Node / JS
+# Node.js / JavaScript
 node_modules/
 **/node_modules/
 .npm/
@@ -31,26 +54,61 @@ node_modules/
 .yarn-cache/
 .yarnrc.yml
 .eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# Vite/Build
+# Build outputs
 **/dist/
 **/build/
 **/.vite/
 **/.vite-cache/
 **/.parcel-cache/
+**/.next/
+**/.nuxt/
+out/
+.output/
 
-# Cloudflare Workers / Wrangler (local state)
-workers/.wrangler/
-workers/.dev.vars
-.miniflare-*
-.mf
+# Docker & Container files
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+*.pid
+.container-*
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.sql
+backups/
+dumps/
+
+# Environment & Secrets (NEVER COMMIT)
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+.local
+.envrc
+secrets.yml
+secrets.json
 
 # Logs & PIDs
 logs/
 *.log
+*.log.*
 .scraper.pid
 frontend/.dev.pid
 workers/.dev.pid
+.monitor.pid
+.scheduler.pid
 
 # Data outputs & cache (generated)
 data/html/
@@ -61,36 +119,97 @@ data/last_run.json
 data/geocache.json
 data/cache/
 data/tmp/
-*.sqlite
-*.db
-*.tmp
+data/exports/
+data/backups/
+output/
+downloads/
+uploads/
 
-# Playwright
+# Playwright & Browser automation
 playwright-report/
 test-results/
 .playwright/
+playwright/.cache/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+debug_*.html
 
-# Env files (never commit secrets)
-.env
-.env.*
-*.env
-**/.env
-**/.env.*
+# Cloudflare Workers / Wrangler
+workers/.wrangler/
+workers/.dev.vars
+.miniflare-*
+.mf
+.wrangler/
 
-# Archives
+# Archives & Compressed files
 *.zip
 *.tar
 *.tgz
 *.gz
-__pycache__/
-.venv/
-*.pyc
-.data/
-results/
-.eggs/
-.Python
-.env
-*.egg-info/
-playwright/.cache/
-data/html/
-data/geocache.json
+*.rar
+*.7z
+*.bz2
+*.xz
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.tmp/
+temp/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.LSOverride
+Icon?
+
+# Network & SSL certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# IDE specific
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+*.code-workspace
+
+# Runtime & Process files
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage & Test reports
+coverage/
+.nyc_output/
+junit.xml
+test-report.xml
+
+# AI/LLM model files (can be large)
+*.gguf
+*.bin
+models/
+checkpoints/
+
+# Monitoring & Analytics
+grafana/data/
+prometheus/data/
+metrics/
+analytics/
+
+# Custom application data
+user_data/
+private/
+local/
+personal/

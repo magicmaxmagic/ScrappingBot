@@ -1,0 +1,28 @@
+{
+  "demo": true,
+  "timestamp": "2025-08-15T10:51:28.961476",
+  "input_records": 7,
+  "output_records": 6,
+  "quality_score": 0,
+  "processing_stages": {
+    "extraction": 7,
+    "transformation": 6,
+    "validation": 6
+  },
+  "data_quality": {
+    "quality_score": 0,
+    "total_records": 7,
+    "unique_records": 6,
+    "duplicates": 1,
+    "missing_titles": 1,
+    "missing_prices": 0,
+    "missing_locations": 1,
+    "invalid_prices": 7,
+    "issues": [
+      "1 duplicate records found",
+      "1 records missing titles",
+      "1 records missing locations",
+      "7 records with invalid prices"
+    ]
+  }
+}

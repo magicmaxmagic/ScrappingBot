@@ -1,0 +1,51 @@
+# Multi-stage build for Python Chatbot with LLM support
+FROM python:3.11-slim as base
+
+# Install system dependencies including build tools for llama-cpp-python
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    cmake \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt requirements-llm.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-llm.txt
+
+# Install additional chatbot dependencies
+RUN pip install --no-cache-dir \
+    fastapi==0.104.1 \
+    uvicorn==0.24.0 \
+    websockets==12.0 \
+    httpx==0.25.2 \
+    python-multipart==0.0.6
+
+# Copy application code
+COPY etl/ ./etl/
+COPY database/ ./database/
+COPY config/ ./config/
+
+# Create chatbot service
+COPY docker/services/chatbot_service.py ./chatbot_service.py
+
+# Create non-root user
+RUN groupadd -r chatbot && useradd -r -g chatbot chatbot
+RUN chown -R chatbot:chatbot /app
+RUN mkdir -p /app/logs && chown chatbot:chatbot /app/logs
+
+USER chatbot
+
+# Expose port for chatbot API
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start chatbot service
+CMD ["uvicorn", "chatbot_service:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

@@ -1,0 +1,83 @@
+# ScrappingBot Scheduler Configuration
+
+# Scraping Jobs
+scraping_jobs:
+  - name: montreal_condos_hourly
+    where: "Montreal"
+    what: "condo"
+    schedule: "hourly"
+    enabled: true
+    
+  - name: montreal_houses_4h
+    where: "Montreal"
+    what: "house"
+    schedule: "4hours"
+    enabled: true
+    
+  - name: downtown_condos_2h
+    where: "Downtown Montreal"
+    what: "condo"
+    schedule: "2hours"
+    enabled: true
+    
+  - name: plateau_condos_2h
+    where: "Plateau Mont-Royal Montreal"
+    what: "condo"
+    schedule: "2hours"
+    enabled: true
+    
+  - name: westmount_houses_4h
+    where: "Westmount Montreal"
+    what: "house"
+    schedule: "4hours"
+    enabled: true
+    
+  - name: old_montreal_condos_4h
+    where: "Old Montreal"
+    what: "condo"
+    schedule: "4hours"
+    enabled: true
+
+# Maintenance Jobs
+maintenance_jobs:
+  - name: refresh_views
+    schedule: "daily"
+    enabled: true
+    description: "Refresh PostgreSQL materialized views"
+    
+  - name: cleanup_old_logs
+    schedule: "weekly"
+    enabled: true
+    description: "Remove log files older than 7 days"
+    
+  - name: update_area_metrics
+    schedule: "daily"
+    enabled: true
+    description: "Update area statistics and metrics"
+    
+  - name: database_vacuum
+    schedule: "weekly"
+    enabled: false
+    description: "PostgreSQL vacuum and analyze"
+
+# Notifications (future feature)
+notifications:
+  enabled: false
+  webhook_url: ""
+  email_alerts: false
+  
+# Rate Limiting
+rate_limits:
+  max_concurrent_jobs: 3
+  delay_between_jobs: 30  # seconds
+  
+# Retry Configuration
+retry_config:
+  max_retries: 3
+  retry_delay: 300  # seconds
+  
+# Monitoring
+monitoring:
+  health_check_interval: 600  # seconds (10 minutes)
+  log_level: "INFO"
+  metrics_enabled: true

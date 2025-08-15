@@ -1,35 +1,394 @@
-SHELL := /bin/bash
+# ScrappingBot Docker Multi-Container Management
+# Makefile for complete application deployment
 
-VENV := .venv
-PY := $(VENV)/bin/python
-PIP := $(VENV)/bin/pip
-PYTHON ?= python3.11
-LOG_DIR := logs
+.PHONY: help build up down restart logs clean setup dev test backup restore
 
-.PHONY: all setup install playwright crawl etl sql report d1 d1-local test clean venv \
-	frontend-install frontend-dev frontend-dev-bg frontend-stop \
-	workers-install workers-dev workers-dev-bg workers-stop \
-	components componnent component dev components-stop components-status \
-	logs-init logs-tail logs-clean up down status
+# Default target
+.DEFAULT_GOAL := help
 
-all: setup crawl etl sql
+# Variables
+COMPOSE_FILE := docker-compose.yml
+COMPOSE_DEV_FILE := docker-compose.dev.yml
+PROJECT_NAME := scrappingbot
+POSTGRES_CONTAINER := scrappingbot-postgres
+API_CONTAINER := scrappingbot-api
+FRONTEND_CONTAINER := scrappingbot-frontend
+CHATBOT_CONTAINER := scrappingbot-chatbot
+SCRAPER_CONTAINER := scrappingbot-scraper
 
-setup: venv install playwright
+# Colors for output
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+RED := \033[0;31m
+BLUE := \033[0;34m
+NC := \033[0m # No Color
+help: ## Show this help message
+	@echo "$(GREEN)ScrappingBot Docker Management$(NC)"
+	@echo "================================"
+	@echo ""
+	@echo "$(BLUE)Available commands:$(NC)"
+	@awk 'BEGIN {FS = ":.*##"; printf ""} /^[a-zA-Z_-]+:.*?##/ { printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@echo ""
 
-venv:
-	@# Create venv if missing, else recreate if Python version != 3.11.4
-	@if [ ! -d "$(VENV)" ]; then \
-		if command -v $(PYTHON) >/dev/null 2>&1; then \
-			$(PYTHON) -m venv $(VENV); \
+# 🚀 Main Commands
+build: ## Build all Docker images
+	@echo "$(BLUE)Building all Docker images...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) build --parallel
+	@echo "$(GREEN)✅ All images built successfully$(NC)"
+
+up: ## Start all services in background
+	up-all: ## Start all services (database, scraper, api, etl)
+	@echo "$(BLUE)Starting all services with ETL...$(NC)"
+	./scripts/start-with-etl.sh
+	@echo "$(GREEN)✅ All services with ETL started$(NC)"
+
+up: ## Start core services (database, api, scraper)
+	@echo "$(BLUE)Starting core services...$(NC)"
+	docker-compose up -d postgres redis api scraper
+	@echo "$(GREEN)✅ Core services started$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Services available at:$(NC)"
+	@echo "  📊 Frontend:    http://localhost:3000"
+	@echo "  🔌 API:         http://localhost:8787"
+	@echo "  💬 Chatbot:     http://localhost:8080"
+	@echo "  📈 Grafana:     http://localhost:3001"
+	@echo "  🔍 Nginx:       http://localhost:80"
+
+up-dev: ## Start all services with development configuration
+	@echo "$(BLUE)Starting development environment...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_FILE) up -d
+	@echo "$(GREEN)✅ Development environment started$(NC)"
+
+down: ## Stop all services
+	@echo "$(BLUE)Stopping all services...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) down
+	@echo "$(GREEN)✅ All services stopped$(NC)"
+
+restart: down up ## Restart all services
+	@echo "$(GREEN)✅ All services restarted$(NC)"
+
+# 📊 Monitoring & Logs
+logs: ## Show logs for all services
+	docker-compose -f $(COMPOSE_FILE) logs -f
+
+logs-api: ## Show API service logs
+	docker-compose -f $(COMPOSE_FILE) logs -f api
+
+logs-scraper: ## Show scraper service logs
+	docker-compose -f $(COMPOSE_FILE) logs -f scraper
+
+logs-chatbot: ## Show chatbot service logs
+	docker-compose -f $(COMPOSE_FILE) logs -f chatbot
+
+logs-db: ## Show database logs
+	docker-compose -f $(COMPOSE_FILE) logs -f postgres
+
+status: ## Show status of all services
+	@echo "$(BLUE)Service Status:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) ps
+
+monitor: ## Show real-time resource usage
+	@echo "$(GREEN)📊 Resource Monitor (Ctrl+C to exit):$(NC)"
+	@docker stats
+
+monitor-live: ## Interactive live monitoring dashboard  
+	@./scripts/docker/monitor.sh
+
+health: ## Check health of all services
+	@echo "$(BLUE)Checking service health...$(NC)"
+	@docker exec $(API_CONTAINER) curl -f http://localhost:8787/health 2>/dev/null && echo "$(GREEN)✅ API healthy$(NC)" || echo "$(RED)❌ API unhealthy$(NC)"
+	@docker exec $(CHATBOT_CONTAINER) curl -f http://localhost:8080/health 2>/dev/null && echo "$(GREEN)✅ Chatbot healthy$(NC)" || echo "$(RED)❌ Chatbot unhealthy$(NC)"
+	@docker exec $(POSTGRES_CONTAINER) pg_isready -U scrappingbot_user -d scrappingbot >/dev/null 2>&1 && echo "$(GREEN)✅ Database healthy$(NC)" || echo "$(RED)❌ Database unhealthy$(NC)"
+
+health-full: ## Comprehensive health check with detailed diagnostics
+	@./scripts/docker/health-check.sh
+
+# 🛠️ Development Commands
+dev: ## Start development environment with hot reload
+	@echo "$(BLUE)Starting development environment...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) -f $(COMPOSE_DEV_FILE) up --build
+	@echo "$(GREEN)✅ Development environment running$(NC)"
+
+shell-api: ## Open shell in API container
+	docker exec -it $(API_CONTAINER) /bin/bash
+
+shell-scraper: ## Open shell in scraper container
+	docker exec -it $(SCRAPER_CONTAINER) /bin/bash
+
+shell-db: ## Open PostgreSQL shell
+	docker exec -it $(POSTGRES_CONTAINER) psql -U scrappingbot_user -d scrappingbot
+
+shell-redis: ## Open Redis shell
+	docker exec -it scrappingbot-redis redis-cli
+
+# 🗄️ Database Operations
+db-init: ## Initialize database schema
+	@echo "$(BLUE)Initializing database schema...$(NC)"
+	docker exec $(API_CONTAINER) python database/setup.py --init
+	@echo "$(GREEN)✅ Database schema initialized$(NC)"
+
+db-migrate: ## Run database migrations
+	@echo "$(BLUE)Running database migrations...$(NC)"
+	docker exec $(API_CONTAINER) python database/setup.py --migrate
+	@echo "$(GREEN)✅ Database migrations completed$(NC)"
+
+db-load-areas: ## Load Montreal area data
+	@echo "$(BLUE)Loading Montreal area data...$(NC)"
+	docker exec $(API_CONTAINER) python database/setup.py --load-areas /app/data/montreal-areas.geojson
+	@echo "$(GREEN)✅ Area data loaded$(NC)"
+
+db-stats: ## Show database statistics
+	@echo "$(BLUE)Database Statistics:$(NC)"
+	docker exec $(API_CONTAINER) python database/postgres_manager.py --stats
+
+db-backup: ## Backup PostgreSQL database
+	@echo "$(BLUE)Creating database backup...$(NC)"
+	@mkdir -p backups
+	docker exec $(POSTGRES_CONTAINER) pg_dump -U scrappingbot_user scrappingbot | gzip > backups/scrappingbot_backup_$(shell date +%Y%m%d_%H%M%S).sql.gz
+	@echo "$(GREEN)✅ Database backup created in backups/$(NC)"
+
+db-restore: ## Restore database from latest backup (use BACKUP_FILE=path to specify)
+	@echo "$(BLUE)Restoring database...$(NC)"
+	@if [ -z "$(BACKUP_FILE)" ]; then \
+		LATEST_BACKUP=$$(ls -t backups/*.sql.gz 2>/dev/null | head -n1); \
+		if [ -n "$$LATEST_BACKUP" ]; then \
+			echo "Using latest backup: $$LATEST_BACKUP"; \
+			zcat $$LATEST_BACKUP | docker exec -i $(POSTGRES_CONTAINER) psql -U scrappingbot_user -d scrappingbot; \
 		else \
-			echo "Python 3.11 requis. Installez-le (ex: brew install python@3.11) ou lancez make avec PYTHON=/chemin/python3.11"; \
-			exit 1; \
-		fi; \
+			echo "$(RED)No backup files found. Use: make db-restore BACKUP_FILE=path/to/backup.sql.gz$(NC)"; \
+		fi \
 	else \
-		VER=`$(PY) -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo unknown`; \
-		if [ "$$VER" != "3.11" ]; then \
-			echo "Venv en $$VER détecté. Recréation avec $(PYTHON) (3.11)"; \
-			rm -rf $(VENV); \
+		zcat $(BACKUP_FILE) | docker exec -i $(POSTGRES_CONTAINER) psql -U scrappingbot_user -d scrappingbot; \
+	fi
+	@echo "$(GREEN)✅ Database restored$(NC)"
+
+# 🕷️ Scraping Operations
+scrape-test: ## Run a test scrape
+	@echo "$(BLUE)Running test scrape...$(NC)"
+	docker exec $(SCRAPER_CONTAINER) python database/scraper_adapter.py --where Montreal --what condo --debug
+
+scrape-montreal: ## Scrape Montreal condos and houses
+	@echo "$(BLUE)Scraping Montreal properties...$(NC)"
+	docker exec -d $(SCRAPER_CONTAINER) python database/scraper_adapter.py --where Montreal --what condo
+	docker exec -d $(SCRAPER_CONTAINER) python database/scraper_adapter.py --where Montreal --what house
+
+scrape-logs: ## Show scraping logs
+	docker exec $(SCRAPER_CONTAINER) tail -f /app/logs/scraper-dev.log
+
+# 🔄 ETL Operations
+etl-full: ## Run complete ETL pipeline (Extract, Transform, Load)
+	@echo "$(BLUE)Running complete ETL pipeline...$(NC)"
+	docker-compose run --rm etl python etl/orchestrator.py --full
+	@echo "$(GREEN)✅ ETL pipeline completed$(NC)"
+
+etl-transform: ## Run only data transformation
+	@echo "$(BLUE)Running ETL transformation...$(NC)"
+	docker-compose run --rm etl python etl/orchestrator.py --transform-only
+
+etl-load: ## Run only data loading to PostgreSQL
+	@echo "$(BLUE)Loading data to PostgreSQL...$(NC)"
+	docker-compose run --rm etl python etl/orchestrator.py --load-only
+
+etl-api: ## Start ETL API service
+	@echo "$(BLUE)Starting ETL API service...$(NC)"
+	docker-compose run --rm -p 8788:8788 etl python etl/api.py
+
+scrape-and-etl: ## Run scraping followed by complete ETL
+	@echo "$(BLUE)Running scraping and ETL pipeline...$(NC)"
+	docker-compose run --rm etl python etl/scraper_adapter.py --where Montreal --what condo
+	@echo "$(GREEN)✅ Scraping and ETL completed$(NC)"
+
+etl-status: ## Show ETL pipeline status and reports
+	@echo "$(BLUE)ETL Pipeline Status:$(NC)"
+	@if [ -f data/etl_report.json ]; then \
+		echo "Last ETL Report:"; \
+		cat data/etl_report.json | jq .; \
+	else \
+		echo "No ETL report found"; \
+	fi
+	@if [ -f data/etl_full_report.json ]; then \
+		echo ""; \
+		echo "Last Full Pipeline Report:"; \
+		cat data/etl_full_report.json | jq .; \
+	fi
+
+etl-validate: ## Validate ETL pipeline setup and components
+	@echo "$(BLUE)Validating ETL pipeline...$(NC)"
+	docker-compose run --rm etl python etl/validate.py
+	@echo "$(GREEN)✅ ETL validation completed$(NC)"
+
+etl-test: ## Run quick ETL test with sample data
+	@echo "$(BLUE)Running ETL test...$(NC)"
+	docker-compose run --rm etl python etl/validate.py --component etl
+	@echo "$(GREEN)✅ ETL test completed$(NC)"
+
+etl-demo: ## Run ETL pipeline demonstration with sample data
+	@echo "$(BLUE)Running ETL demonstration...$(NC)"
+	docker-compose run --rm etl python etl/demo.py
+	@echo "$(GREEN)✅ ETL demo completed$(NC)"
+
+etl-clean: ## Clean ETL temporary files and reports
+	@echo "$(BLUE)Cleaning ETL files...$(NC)"
+	@rm -f data/demo_*.json
+	@rm -f data/etl_*.json
+	@rm -f data/temp/*
+	@echo "$(GREEN)✅ ETL files cleaned$(NC)"
+
+# 🐳 ETL Docker Operations
+etl-build: ## Build ETL Docker image
+	@echo "$(BLUE)Building ETL Docker image...$(NC)"
+	docker-compose build etl
+	@echo "$(GREEN)✅ ETL image built$(NC)"
+
+etl-up: ## Start ETL service with Docker
+	@echo "$(BLUE)Starting ETL Docker service...$(NC)"
+	docker-compose up -d etl
+	@echo "$(GREEN)✅ ETL service started$(NC)"
+
+etl-down: ## Stop ETL Docker service
+	@echo "$(BLUE)Stopping ETL Docker service...$(NC)"
+	docker-compose stop etl
+	@echo "$(GREEN)✅ ETL service stopped$(NC)"
+
+etl-restart: ## Restart ETL Docker service
+	@echo "$(BLUE)Restarting ETL Docker service...$(NC)"
+	docker-compose restart etl
+	@echo "$(GREEN)✅ ETL service restarted$(NC)"
+
+etl-logs: ## Show ETL Docker service logs
+	@echo "$(BLUE)ETL service logs:$(NC)"
+	docker-compose logs -f etl
+
+etl-shell: ## Open shell in ETL container
+	@echo "$(BLUE)Opening shell in ETL container...$(NC)"
+	docker-compose exec etl bash
+
+etl-docker-full: ## Run complete ETL pipeline in Docker
+	@echo "$(BLUE)Running ETL pipeline in Docker...$(NC)"
+	docker-compose exec etl python etl/orchestrator.py --full
+	@echo "$(GREEN)✅ Docker ETL pipeline completed$(NC)"
+
+etl-docker-demo: ## Run ETL demo in Docker
+	@echo "$(BLUE)Running ETL demo in Docker...$(NC)"
+	docker-compose exec etl python etl/demo.py
+	@echo "$(GREEN)✅ Docker ETL demo completed$(NC)"
+
+etl-docker-validate: ## Validate ETL pipeline in Docker
+	@echo "$(BLUE)Validating ETL pipeline in Docker...$(NC)"
+	docker-compose exec etl python etl/validate.py
+	@echo "$(GREEN)✅ Docker ETL validation completed$(NC)"
+
+etl-docker-test: ## Run complete ETL Docker test suite
+	@echo "$(BLUE)Running ETL Docker test suite...$(NC)"
+	./scripts/test-etl-docker.sh
+	@echo "$(GREEN)✅ ETL Docker tests completed$(NC)"
+
+# 🤖 LLM Operations
+llm-pull: ## Pull LLM model (default: llama3.1)
+	@echo "$(BLUE)Pulling LLM model...$(NC)"
+	docker exec scrappingbot-ollama ollama pull $${MODEL_NAME:-llama3.1}
+	@echo "$(GREEN)✅ Model $${MODEL_NAME:-llama3.1} pulled$(NC)"
+
+llm-list: ## List available LLM models
+	@echo "$(BLUE)Available LLM models:$(NC)"
+	docker exec scrappingbot-ollama ollama list
+
+llm-chat: ## Test chat with LLM
+	docker exec -it scrappingbot-ollama ollama run llama3.1
+
+# 🧹 Cleanup Commands
+clean: ## Remove all stopped containers and unused images
+	@echo "$(BLUE)Cleaning up Docker resources...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) down --remove-orphans
+	docker system prune -f
+	@echo "$(GREEN)✅ Cleanup completed$(NC)"
+
+clean-all: ## Remove all containers, volumes, and images
+	@echo "$(RED)⚠️  This will remove ALL data including the database!$(NC)"
+	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ]
+	docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans
+	docker system prune -a -f --volumes
+	@echo "$(GREEN)✅ Complete cleanup done$(NC)"
+
+clean-logs: ## Clean up old log files
+	docker exec $(SCRAPER_CONTAINER) find /app/logs -name "*.log" -type f -mtime +7 -delete 2>/dev/null || true
+	@echo "$(GREEN)✅ Old logs cleaned$(NC)"
+
+# 🔧 Setup Commands
+setup: ## Complete setup - build, start services, and initialize database
+	@echo "$(BLUE)Starting complete ScrappingBot setup...$(NC)"
+	@make build
+	@make up
+	@echo "$(YELLOW)Waiting for services to start...$(NC)"
+	@sleep 30
+	@make db-init
+	@make db-load-areas
+	@echo ""
+	@echo "$(GREEN)🎉 ScrappingBot setup completed!$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "1. Visit http://localhost:3000 for the frontend"
+	@echo "2. API documentation: http://localhost:8787/docs"
+	@echo "3. Run a test scrape: make scrape-test"
+	@echo "4. View logs: make logs"
+
+setup-dev: ## Setup development environment
+	@echo "$(BLUE)Setting up development environment...$(NC)"
+	@make build
+	@make up-dev
+	@echo "$(YELLOW)Waiting for services to start...$(NC)"
+	@sleep 30
+	@make db-init
+	@echo "$(GREEN)✅ Development environment ready$(NC)"
+
+# 📋 Quick Commands
+quick-start: ## Quick start for demo (setup + test scrape)
+	@make setup
+	@make scrape-test
+	@echo "$(GREEN)🚀 ScrappingBot demo ready!$(NC)"
+
+manage: ## Interactive management console
+	@./scripts/manage.sh
+
+gui: manage ## Alias for interactive management console
+
+info: ## Show system information
+	@echo "$(BLUE)ScrappingBot System Information$(NC)"
+	@echo "================================"
+	@echo ""
+	@echo "$(YELLOW)Docker Services:$(NC)"
+	@docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+	@echo ""
+	@echo "$(YELLOW)Service URLs:$(NC)"
+	@echo "  📊 Frontend:    http://localhost:3000"
+	@echo "  🔌 API:         http://localhost:8787 (Docs: /docs)"
+	@echo "  💬 Chatbot:     http://localhost:8080 (Health: /health)"
+	@echo "  📈 Grafana:     http://localhost:3001 (admin:admin)"
+	@echo "  🔍 Nginx:       http://localhost:80"
+	@echo ""
+	@echo "$(YELLOW)Resource Usage:$(NC)"
+	@docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+# 🔄 CI/CD Commands
+ci-build: ## Build for CI/CD pipeline
+	@echo "$(BLUE)Building for CI/CD...$(NC)"
+	docker-compose build --parallel --no-cache
+	@echo "$(GREEN)✅ CI build completed$(NC)"
+
+ci-test: ## Run all tests for CI/CD
+	@echo "$(BLUE)Running CI tests...$(NC)"
+	@make health
+	@echo "$(GREEN)✅ CI tests passed$(NC)"
+
+security-scan: ## Run security vulnerability scan
+	@echo "$(BLUE)Running security scan...$(NC)"
+	@docker run --rm -v "$$PWD":/app -w /app aquasec/trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+	@echo "$(GREEN)✅ Security scan completed$(NC)"
+
+performance-test: ## Run performance benchmarks
+	@echo "$(BLUE)Running performance tests...$(NC)"
+	@curl -s -w "@docker/scripts/curl-format.txt" -o /dev/null "http://localhost:8787/health"
+	@echo "$(GREEN)✅ Performance test completed$(NC)" \
 			if command -v $(PYTHON) >/dev/null 2>&1; then \
 				$(PYTHON) -m venv $(VENV); \
 			else \
@@ -81,7 +440,18 @@ scraper-dev-server:
 	$(PY) scripts/dev_scraper_server.py
 
 scraper-dev-server-bg: logs-init
-	@nohup $(PY) scripts/dev_scraper_server.py > $(LOG_DIR)/scraper.log 2>&1 & echo $$! > .scraper.pid && echo "Scraper dev server started (pid: $$(cat .scraper.pid)) at http://127.0.0.1:8000"
+	@if curl -fsS http://127.0.0.1:$(SCRAPER_PORT)/health >/dev/null 2>&1; then \
+	  echo "Scraper dev server already running at http://127.0.0.1:$(SCRAPER_PORT)"; \
+	else \
+	  PIDS=$$(lsof -ti tcp:$(SCRAPER_PORT) || true); \
+	  if [ -n "$$PIDS" ]; then \
+	    echo "Killing PID(s) $$PIDS on port $(SCRAPER_PORT)"; \
+	    kill $$PIDS || true; sleep 0.2; \
+	    PIDS2=$$(lsof -ti tcp:$(SCRAPER_PORT) || true); \
+	    if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2"; kill -9 $$PIDS2 || true; fi; \
+	  fi; \
+	  SCRAPER_SERVER_PORT=$(SCRAPER_PORT) nohup $(PY) scripts/dev_scraper_server.py > $(LOG_DIR)/scraper.log 2>&1 & echo $$! > .scraper.pid && echo "Scraper dev server started (pid: $$(cat .scraper.pid)) at http://127.0.0.1:$(SCRAPER_PORT)"; \
+	fi
 
 scraper-dev-stop:
 	@if [ -f .scraper.pid ]; then kill `cat .scraper.pid` || true; rm -f .scraper.pid; echo "Stopped scraper dev server"; else echo "Scraper dev server not running"; fi
@@ -106,14 +476,43 @@ workers-dev: workers-install
 # Background runners with PID and log files
 frontend-dev-bg: frontend-install logs-init
 	@mkdir -p $(FRONTEND_DIR)
-	@cd $(FRONTEND_DIR) && nohup npm run dev > ../$(LOG_DIR)/frontend.log 2>&1 & echo $$! > .dev.pid && echo "Frontend dev started (pid: $$(cat .dev.pid))"
+	@# Kill any stray Vite processes occupying common dev ports
+	@for p in $$(seq $(FRONTEND_PORT) $(FRONTEND_PORT_MAX)); do \
+	  PIDS=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS" ]; then echo "Killing PID(s) $$PIDS on port $$p"; kill $$PIDS || true; sleep 0.1; fi; \
+	  PIDS2=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2 on port $$p"; kill -9 $$PIDS2 || true; fi; \
+	done
+	@cd $(FRONTEND_DIR) && nohup npm run dev -- --port $(FRONTEND_PORT) > ../$(LOG_DIR)/frontend.log 2>&1 & echo $$! > .dev.pid && echo "Frontend dev started (pid: $$(cat .dev.pid)) at http://127.0.0.1:$(FRONTEND_PORT)"
 
 workers-dev-bg: workers-install logs-init
 	@mkdir -p $(WORKERS_DIR)
-	@cd $(WORKERS_DIR) && nohup npm run dev > ../$(LOG_DIR)/workers.log 2>&1 & echo $$! > .dev.pid && echo "Workers dev started (pid: $$(cat .dev.pid)) at http://127.0.0.1:8787"
+	@PIDS=$$(lsof -ti tcp:$(WORKERS_DEV_PORT) || true); \
+	if [ -n "$$PIDS" ]; then \
+	  echo "Killing PID(s) $$PIDS on port $(WORKERS_DEV_PORT)"; \
+	  kill $$PIDS || true; sleep 0.2; \
+	  PIDS2=$$(lsof -ti tcp:$(WORKERS_DEV_PORT) || true); \
+	  if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2"; kill -9 $$PIDS2 || true; fi; \
+	fi
+	@cd $(WORKERS_DIR) && nohup npm run dev > ../$(LOG_DIR)/workers.log 2>&1 & echo $$! > .dev.pid && echo "Workers dev started (pid: $$(cat .dev.pid)) at http://127.0.0.1:$(WORKERS_DEV_PORT)"
 
 frontend-stop:
 	@if [ -f $(FRONTEND_DIR)/.dev.pid ]; then kill `cat $(FRONTEND_DIR)/.dev.pid` || true; rm -f $(FRONTEND_DIR)/.dev.pid; echo "Stopped frontend"; else echo "Frontend not running"; fi
+	@# Also ensure the port range is free
+	@for p in $$(seq $(FRONTEND_PORT) $(FRONTEND_PORT_MAX)); do \
+	  PIDS=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS" ]; then echo "Killing PID(s) $$PIDS on port $$p"; kill $$PIDS || true; sleep 0.1; fi; \
+	  PIDS2=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2 on port $$p"; kill -9 $$PIDS2 || true; fi; \
+	done
+# Kill typical frontend dev port range
+ports-kill-frontend:
+	@for p in $$(seq $(FRONTEND_PORT) $(FRONTEND_PORT_MAX)); do \
+	  PIDS=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS" ]; then echo "Killing PID(s) $$PIDS on port $$p"; kill $$PIDS || true; sleep 0.1; fi; \
+	  PIDS2=$$(lsof -ti tcp:$$p || true); \
+	  if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2 on port $$p"; kill -9 $$PIDS2 || true; fi; \
+	done; echo "Frontend ports $(FRONTEND_PORT)-$(FRONTEND_PORT_MAX) cleared"
 
 workers-stop:
 	@if [ -f $(WORKERS_DIR)/.dev.pid ]; then kill `cat $(WORKERS_DIR)/.dev.pid` || true; rm -f $(WORKERS_DIR)/.dev.pid; echo "Stopped workers"; else echo "Workers not running"; fi
@@ -155,3 +554,16 @@ logs-tail: logs-init
 
 logs-clean:
 	rm -f $(LOG_DIR)/*.log 2>/dev/null || true
+
+# Kill whatever runs on a given PORT
+port-kill:
+	@if [ -z "$(PORT)" ]; then echo "Usage: make port-kill PORT=xxxx"; exit 1; fi
+	@PIDS=$$(lsof -ti tcp:$(PORT) || true); \
+	if [ -n "$$PIDS" ]; then \
+	  echo "Killing PID(s) $$PIDS on port $(PORT)"; \
+	  kill $$PIDS || true; sleep 0.2; \
+	  PIDS2=$$(lsof -ti tcp:$(PORT) || true); \
+	  if [ -n "$$PIDS2" ]; then echo "Force killing $$PIDS2"; kill -9 $$PIDS2 || true; fi; \
+	else \
+	  echo "No process on port $(PORT)"; \
+	fi

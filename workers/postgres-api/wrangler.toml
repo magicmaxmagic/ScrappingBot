@@ -1,0 +1,17 @@
+name = "postgres-api"
+main = "src/worker.ts"
+compatibility_date = "2023-11-01"
+
+[env.production]
+# PostgreSQL connection - use Neon, Supabase, or similar edge-compatible service
+vars = { ENVIRONMENT = "production" }
+
+[env.preview]
+vars = { ENVIRONMENT = "preview" }
+
+[env.development]
+vars = { ENVIRONMENT = "development" }
+
+# Add your database URL as a secret:
+# wrangler secret put DATABASE_URL
+# wrangler secret put CORS_ORIGIN

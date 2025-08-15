@@ -1,58 +1,134 @@
-from __future__ import annotations
+"""
+Data deduplication utilities for the ETL pipeline.
+Removes duplicate listings based on various criteria.
+"""
 
 import hashlib
-from typing import Iterable, List, Tuple
-
-# Simple SimHash implementation for near-duplicate text
-
-def _tokenize(text: str) -> List[str]:
-    return [t for t in re.findall(r"\w+", (text or "").lower()) if t]
+from typing import List, Dict, Any, Set
 
 
-import re
+def generate_listing_hash(listing: Dict[str, Any]) -> str:
+    """
+    Generate a hash for a listing based on key identifying fields.
+    
+    Args:
+        listing: Listing dictionary
+        
+    Returns:
+        Hash string for deduplication
+    """
+    # Key fields for identifying duplicates
+    key_fields = [
+        'url',
+        'title', 
+        'address',
+        'price',
+        'area_sqm',
+        'property_type'
+    ]
+    
+    # Create hash input string
+    hash_input = ""
+    for field in key_fields:
+        value = listing.get(field, "")
+        if value is not None:
+            hash_input += str(value).lower().strip()
+    
+    # Generate MD5 hash
+    return hashlib.md5(hash_input.encode('utf-8')).hexdigest()
 
 
-def simhash(text: str, bits: int = 64) -> int:
-    v = [0] * bits
-    for tok in _tokenize(text):
-        h = int(hashlib.sha1(tok.encode()).hexdigest(), 16)
-        for i in range(bits):
-            v[i] += 1 if (h >> i) & 1 else -1
-    fp = 0
-    for i in range(bits):
-        if v[i] >= 0:
-            fp |= 1 << i
-    return fp
+def dedupe_records(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Remove duplicate listings from a list.
+    
+    Args:
+        listings: List of listing dictionaries
+        
+    Returns:
+        Deduplicated list of listings
+    """
+    if not listings:
+        return []
+    
+    seen_hashes: Set[str] = set()
+    deduplicated = []
+    
+    for listing in listings:
+        listing_hash = generate_listing_hash(listing)
+        
+        if listing_hash not in seen_hashes:
+            seen_hashes.add(listing_hash)
+            deduplicated.append(listing)
+    
+    return deduplicated
 
 
-def hamming(a: int, b: int) -> int:
-    return bin(a ^ b).count("1")
+def dedupe(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Alias for dedupe_records for backward compatibility."""
+    return dedupe_records(listings)
 
 
-def canonical_id(url: str, price: float | None, area_sqm: float | None) -> str:
-    base = f"{url}|{price or ''}|{area_sqm or ''}"
-    return hashlib.sha1(base.encode()).hexdigest()
+def find_duplicates(listings: List[Dict[str, Any]]) -> Dict[str, List[int]]:
+    """
+    Find duplicate listings and return their indices.
+    
+    Args:
+        listings: List of listing dictionaries
+        
+    Returns:
+        Dictionary mapping hash to list of indices
+    """
+    hash_to_indices: Dict[str, List[int]] = {}
+    
+    for i, listing in enumerate(listings):
+        listing_hash = generate_listing_hash(listing)
+        
+        if listing_hash not in hash_to_indices:
+            hash_to_indices[listing_hash] = []
+        
+        hash_to_indices[listing_hash].append(i)
+    
+    # Return only duplicates (hash with more than one index)
+    return {h: indices for h, indices in hash_to_indices.items() if len(indices) > 1}
 
 
-def dedupe_records(records: Iterable[dict], simhash_threshold: int = 3) -> List[dict]:
-    seen_ids: set[str] = set()
-    seen_text_fp: List[Tuple[int, str]] = []  # (fp, id)
-    out: List[dict] = []
-
-    for r in records:
-        cid = canonical_id(r.get("url", ""), r.get("price"), r.get("area_sqm"))
-        if cid in seen_ids:
-            continue
-        text = " ".join(
-            str(r.get(k, "")) for k in ["title", "address", "site_domain"]
-        )
-        fp = simhash(text)
-        is_dup = any(hamming(fp, prev_fp) <= simhash_threshold for prev_fp, _ in seen_text_fp)
-        if is_dup:
-            continue
-        seen_ids.add(cid)
-        seen_text_fp.append((fp, cid))
-        r["id"] = cid
-        out.append(r)
-
-    return out
+def merge_duplicates(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Merge duplicate listings by combining their data.
+    
+    Args:
+        listings: List of listing dictionaries
+        
+    Returns:
+        List with merged duplicates
+    """
+    if not listings:
+        return []
+    
+    duplicates = find_duplicates(listings)
+    used_indices: Set[int] = set()
+    merged_listings = []
+    
+    # Process duplicates
+    for hash_value, indices in duplicates.items():
+        if not any(i in used_indices for i in indices):
+            # Merge all duplicates for this hash
+            merged = listings[indices[0]].copy()
+            
+            # Merge data from other duplicates
+            for i in indices[1:]:
+                duplicate = listings[i]
+                for key, value in duplicate.items():
+                    if not merged.get(key) and value:
+                        merged[key] = value
+            
+            merged_listings.append(merged)
+            used_indices.update(indices)
+    
+    # Add non-duplicates
+    for i, listing in enumerate(listings):
+        if i not in used_indices:
+            merged_listings.append(listing)
+    
+    return merged_listings

@@ -1,0 +1,68 @@
+[
+  {
+    "title": "Beautiful condo in downtown Montreal",
+    "price": 450000.0,
+    "location": "Montreal, QC H3B 1A1",
+    "area_sqft": 900,
+    "bedrooms": "2",
+    "bathrooms": "1",
+    "description": "Modern condo with city views",
+    "url": "https://example.com/property/1",
+    "data_hash": 4440478393461456416
+  },
+  {
+    "title": "Spacious house in Westmount",
+    "price": 1250000.0,
+    "location": "Westmount, QC H3Z 2A7",
+    "area_sqft": 2500,
+    "bedrooms": "4",
+    "bathrooms": "3",
+    "description": "Victorian style house with garden",
+    "url": "https://example.com/property/2",
+    "data_hash": -4854540356404295373
+  },
+  {
+    "title": "Studio apartment near McGill",
+    "price": 280000.0,
+    "location": "Montreal, QC H3A 0G4",
+    "area_sqft": 450,
+    "bedrooms": "0",
+    "bathrooms": "1",
+    "description": "Perfect for students",
+    "url": "https://example.com/property/3",
+    "data_hash": 954777167721443668
+  },
+  {
+    "title": "Luxury penthouse Old Montreal",
+    "price": 2800000.0,
+    "location": "Montreal, QC H2Y 3H1",
+    "area_sqft": 3200,
+    "bedrooms": "3",
+    "bathrooms": "2.5",
+    "description": "Penthouse with river views",
+    "url": "https://example.com/property/4",
+    "data_hash": 319745398991055161
+  },
+  {
+    "title": "Family home in NDG",
+    "price": 750000.0,
+    "location": "Montreal, QC H4A 3J5",
+    "area_sqft": 1800,
+    "bedrooms": "3",
+    "bathrooms": "2",
+    "description": "Perfect family home",
+    "url": "https://example.com/property/5",
+    "data_hash": -2956921724262455455
+  },
+  {
+    "title": "Beautiful condo in downtown Montreal",
+    "price": 450000.0,
+    "location": "Montreal, QC H3B 1A1",
+    "area_sqft": 900,
+    "bedrooms": "2",
+    "bathrooms": "1",
+    "description": "Modern condo with city views (duplicate)",
+    "url": "https://example.com/property/1-duplicate",
+    "data_hash": 4440478393461456416
+  }
+]

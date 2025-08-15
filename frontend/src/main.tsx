@@ -6,7 +6,5 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { App } from './pages/App'
 
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 )

@@ -1,0 +1,45 @@
+FROM python:3.11-slim
+
+# Variables d'environnement
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Répertoire de travail
+WORKDIR /app
+
+# Installation des dépendances système
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copie des requirements
+COPY requirements.txt .
+COPY database/requirements.txt ./database_requirements.txt
+
+# Installation des dépendances Python
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r database_requirements.txt
+RUN pip install --no-cache-dir psycopg2-binary
+
+# Copie du code
+COPY etl/ ./etl/
+COPY database/ ./database/
+COPY config/ ./config/
+COPY data/ ./data/
+
+# Création des répertoires nécessaires
+RUN mkdir -p /app/logs /app/data
+
+# Script de point d'entrée
+COPY docker/entrypoints/etl-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
+
+# Point d'entrée
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "etl/orchestrator.py", "--full"]

@@ -1,0 +1,69 @@
+version: '3.8'
+
+# Development overrides for docker-compose.yml
+services:
+  # Development PostgreSQL with exposed ports
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=scrappingbot_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    command: postgres -c log_statement=all
+
+  # Development API with hot reload
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      target: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - DEBUG=1
+      - RELOAD=1
+    command: uvicorn api_service:app --host 0.0.0.0 --port 8787 --reload
+
+  # Development Frontend with hot reload
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      target: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+
+  # Development Chatbot with hot reload
+  chatbot:
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - RELOAD=1
+    command: uvicorn chatbot_service:app --host 0.0.0.0 --port 8080 --reload
+
+  # Development Scraper with debug mode
+  scraper:
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - LOG_LEVEL=DEBUG
+    command: python database/scraper_adapter.py --debug
+
+  # Grafana with dev dashboards
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=devpass123
+      - GF_USERS_ALLOW_SIGN_UP=true
+      - GF_LOG_LEVEL=debug
+
+volumes:
+  postgres_dev_data:

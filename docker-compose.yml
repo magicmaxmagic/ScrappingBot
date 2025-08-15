@@ -1,0 +1,245 @@
+services:
+  # PostgreSQL Database with PostGIS
+  postgres:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: scrappingbot-postgres
+    environment:
+      POSTGRES_DB: scrappingbot
+      POSTGRES_USER: scrappingbot_user
+      POSTGRES_PASSWORD: scrappingbot_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/init-scripts:/docker-entrypoint-initdb.d
+      - ./data:/opt/data:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - scrappingbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scrappingbot_user -d scrappingbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: scrappingbot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - scrappingbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Python Scraper Service
+  scraper:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scraper
+    container_name: scrappingbot-scraper
+    environment:
+      DATABASE_URL: postgresql://scrappingbot_user:scrappingbot_pass@postgres:5432/scrappingbot
+      REDIS_URL: redis://redis:6379
+      PLAYWRIGHT_BROWSERS_PATH: /opt/playwright
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - playwright_cache:/opt/playwright
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Chatbot/LLM Service (Ollama)
+  chatbot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.chatbot
+    container_name: scrappingbot-chatbot
+    environment:
+      DATABASE_URL: postgresql://scrappingbot_user:scrappingbot_pass@postgres:5432/scrappingbot
+      REDIS_URL: redis://redis:6379
+      OLLAMA_HOST: ollama:11434
+    volumes:
+      - ./logs:/app/logs
+      - ./extractor:/app/extractor
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Ollama LLM Server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: scrappingbot-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - scrappingbot-network
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+
+  # API Service (Python FastAPI)
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: scrappingbot-api
+    environment:
+      DATABASE_URL: postgresql://scrappingbot_user:scrappingbot_pass@postgres:5432/scrappingbot
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:5173"
+    ports:
+      - "8787:8787"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Frontend (React/Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: scrappingbot-frontend
+    environment:
+      VITE_API_URL: http://localhost:8787
+      VITE_CHATBOT_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+      - chatbot
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: scrappingbot-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - api
+      - chatbot
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Monitoring with Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: scrappingbot-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # Task Scheduler Service
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scheduler
+    container_name: scrappingbot-scheduler
+    environment:
+      DATABASE_URL: postgresql://scrappingbot_user:scrappingbot_pass@postgres:5432/scrappingbot
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./config/scheduler.yml:/app/config/scheduler.yml
+    depends_on:
+      - postgres
+      - redis
+      - scraper
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+
+  # ETL Pipeline Service
+  # ETL Service (Extract-Transform-Load)
+  etl:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.etl
+    container_name: scrappingbot-etl
+    environment:
+      DATABASE_URL: postgresql://scrappingbot_user:scrappingbot_pass@postgres:5432/scrappingbot
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: scrappingbot
+      POSTGRES_USER: scrappingbot_user
+      POSTGRES_PASSWORD: scrappingbot_pass
+      REDIS_URL: redis://redis:6379
+      ETL_BATCH_SIZE: 100
+      ETL_LOG_LEVEL: INFO
+      ETL_DATA_PATH: /app/data
+      ETL_MODE: api
+    ports:
+      - "8788:8788"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      scraper:
+        condition: service_started
+    networks:
+      - scrappingbot-network
+    restart: unless-stopped
+    command: ["python", "etl/api.py"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  grafana_data:
+  playwright_cache:
+
+networks:
+  scrappingbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

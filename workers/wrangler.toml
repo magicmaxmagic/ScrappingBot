@@ -1,6 +1,6 @@
 name = "estate-api"
 main = "src/index.ts"
-compatibility_date = "2024-12-01"
+compatibility_date = "2025-08-01"
 
 [vars]
 # add default vars here if needed

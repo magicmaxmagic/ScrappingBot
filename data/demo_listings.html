@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings Immobiliers - Démo Visuelle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .listing {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .listing:hover {
+            transform: translateY(-5px);
+        }
+        .listing-image {
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .listing-content {
+            padding: 20px;
+        }
+        .price {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .address {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        .details {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .detail-item {
+            background: #ecf0f1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .description {
+            color: #34495e;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .listing-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+        }
+        .agent {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .date-listed {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .listing {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏠 Listings Immobiliers Premium</h1>
+        <p>Découvrez les meilleures propriétés disponibles</p>
+        <p><small>Données de test pour visualisation scraper</small></p>
+    </div>
+
+    <div class="listings-grid">
+        <!-- Listing 1 - Luxueux condo à Montréal -->
+        <div class="listing" data-price="750000">
+            <div class="badge">NOUVEAU</div>
+            <div class="listing-image">🏢 Vue Skyline</div>
+            <div class="listing-content">
+                <div class="price">750 000 $</div>
+                <div class="address">1200 Rue Crescent, Montréal, QC H3G 2A8</div>
+                <div class="details">
+                    <span class="detail-item">3 chambres</span>
+                    <span class="detail-item">2 salles de bain</span>
+                    <span class="detail-item">1200 pi²</span>
+                </div>
+                <div class="description">
+                    Magnifique condo rénové avec vue sur le centre-ville. Finitions haut de gamme, 
+                    cuisine moderne et balcon privé. Proche du métro et des commerces.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Marie Dubois</span>
+                    <span class="date-listed">Publié: 5 jours</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listing 2 - Maison familiale à Laval -->
+        <div class="listing" data-price="425000">
+            <div class="listing-image">🏡 Maison Familiale</div>
+            <div class="listing-content">
+                <div class="price">425 000 $</div>
+                <div class="address">856 Boulevard Curé-Labelle, Laval, QC H7V 2T8</div>
+                <div class="details">
+                    <span class="detail-item">4 chambres</span>
+                    <span class="detail-item">2 salles de bain</span>
+                    <span class="detail-item">1800 pi²</span>
+                </div>
+                <div class="description">
+                    Parfaite pour famille! Maison bi-génération avec grand terrain, 
+                    garage double et sous-sol aménagé. Secteur paisible près des écoles.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Pierre Martin</span>
+                    <span class="date-listed">Publié: 12 jours</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listing 3 - Loft industriel -->
+        <div class="listing" data-price="320000">
+            <div class="badge">PRIX RÉDUIT</div>
+            <div class="listing-image">🏭 Loft Industriel</div>
+            <div class="listing-content">
+                <div class="price">320 000 $</div>
+                <div class="address">4750 Rue Saint-Antoine Ouest, Montréal, QC H4C 1A1</div>
+                <div class="details">
+                    <span class="detail-item">2 chambres</span>
+                    <span class="detail-item">1 salle de bain</span>
+                    <span class="detail-item">950 pi²</span>
+                </div>
+                <div class="description">
+                    Loft unique dans ancien entrepôt converti. Plafonds hauts, 
+                    poutres exposées et grandes fenêtres. Parfait pour artiste ou professionnel créatif.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Sophie Tremblay</span>
+                    <span class="date-listed">Publié: 8 jours</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listing 4 - Propriété de luxe -->
+        <div class="listing" data-price="1250000">
+            <div class="badge">EXCLUSIF</div>
+            <div class="listing-image">🏰 Villa de Luxe</div>
+            <div class="listing-content">
+                <div class="price">1 250 000 $</div>
+                <div class="address">95 Chemin du Bord-du-Lac, Dorval, QC H9S 4L5</div>
+                <div class="details">
+                    <span class="detail-item">5 chambres</span>
+                    <span class="detail-item">3 salles de bain</span>
+                    <span class="detail-item">3200 pi²</span>
+                </div>
+                <div class="description">
+                    Propriété d'exception au bord de l'eau. Architecture contemporaine, 
+                    piscine chauffée et quai privé. Vue panoramique sur le lac Saint-Louis.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Jean-Claude Réal</span>
+                    <span class="date-listed">Publié: 2 jours</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listing 5 - Starter home -->
+        <div class="listing" data-price="280000">
+            <div class="listing-image">🏠 Première Maison</div>
+            <div class="listing-content">
+                <div class="price">280 000 $</div>
+                <div class="address">1847 Rue Fleury Est, Montréal, QC H2C 1T1</div>
+                <div class="details">
+                    <span class="detail-item">2 chambres</span>
+                    <span class="detail-item">1 salle de bain</span>
+                    <span class="detail-item">750 pi²</span>
+                </div>
+                <div class="description">
+                    Charmante première propriété à rénover. Structure solide, 
+                    grande cour arrière et potentiel de plus-value. Quartier en émergence.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Lisa Roy</span>
+                    <span class="date-listed">Publié: 15 jours</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listing 6 - Penthouse -->
+        <div class="listing" data-price="950000">
+            <div class="badge">VUE EXCEPTIONNELLE</div>
+            <div class="listing-image">🏙️ Penthouse</div>
+            <div class="listing-content">
+                <div class="price">950 000 $</div>
+                <div class="address">1188 Rue Union, Montréal, QC H3B 3C6</div>
+                <div class="details">
+                    <span class="detail-item">3 chambres</span>
+                    <span class="detail-item">2 salles de bain</span>
+                    <span class="detail-item">1500 pi²</span>
+                </div>
+                <div class="description">
+                    Penthouse avec terrasse privée au cœur du centre-ville. 
+                    Fenestration floor-to-ceiling, finitions de luxe et service de conciergerie.
+                </div>
+                <div class="listing-meta">
+                    <span class="agent">Agent: Alexandre Dubé</span>
+                    <span class="date-listed">Publié: 3 jours</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animation des listings au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const listings = document.querySelectorAll('.listing');
+            listings.forEach((listing, index) => {
+                listing.style.opacity = '0';
+                listing.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    listing.style.transition = 'all 0.6s ease';
+                    listing.style.opacity = '1';
+                    listing.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Statistiques pour le scraper
+        console.log('🏠 Page de démo chargée avec', document.querySelectorAll('.listing').length, 'listings');
+        console.log('💰 Prix moyen:', 
+            Array.from(document.querySelectorAll('[data-price]'))
+                .reduce((sum, el) => sum + parseInt(el.dataset.price), 0) / 
+            document.querySelectorAll('[data-price]').length, '$');
+    </script>
+</body>
+</html>

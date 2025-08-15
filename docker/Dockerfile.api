@@ -1,0 +1,45 @@
+# FastAPI service for PostgreSQL data
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt database/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional API dependencies
+RUN pip install --no-cache-dir \
+    fastapi==0.104.1 \
+    uvicorn==0.24.0 \
+    redis==5.0.1 \
+    httpx==0.25.2
+
+# Copy application code
+COPY database/ ./database/
+COPY config/ ./config/
+
+# Create API service
+COPY docker/services/api_service.py ./api_service.py
+
+# Create non-root user
+RUN groupadd -r api && useradd -r -g api api
+RUN chown -R api:api /app
+RUN mkdir -p /app/logs && chown api:api /app/logs
+
+USER api
+
+# Expose port for API
+EXPOSE 8787
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8787/health || exit 1
+
+# Start API service
+CMD ["uvicorn", "api_service:app", "--host", "0.0.0.0", "--port", "8787", "--reload"]

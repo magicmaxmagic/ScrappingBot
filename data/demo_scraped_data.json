@@ -1,0 +1,79 @@
+[
+  {
+    "title": "Beautiful condo in downtown Montreal",
+    "price": "$450,000",
+    "location": "Montreal, QC H3B 1A1",
+    "area": "900 sq ft",
+    "bedrooms": "2",
+    "bathrooms": "1",
+    "description": "Modern condo with city views",
+    "url": "https://example.com/property/1",
+    "scraped_at": "2025-08-15T10:51:28.956189"
+  },
+  {
+    "title": "Spacious house in Westmount",
+    "price": "$1,250,000",
+    "location": "Westmount, QC H3Z 2A7",
+    "area": "2500 square feet",
+    "bedrooms": "4",
+    "bathrooms": "3",
+    "description": "Victorian style house with garden",
+    "url": "https://example.com/property/2",
+    "scraped_at": "2025-08-15T10:51:28.956210"
+  },
+  {
+    "title": "Studio apartment near McGill",
+    "price": "$280000",
+    "location": "Montreal, QC H3A 0G4",
+    "area": "450 sq ft",
+    "bedrooms": "0",
+    "bathrooms": "1",
+    "description": "Perfect for students",
+    "url": "https://example.com/property/3",
+    "scraped_at": "2025-08-15T10:51:28.956212"
+  },
+  {
+    "title": "Luxury penthouse Old Montreal",
+    "price": "$2,800,000",
+    "location": "Montreal, QC H2Y 3H1",
+    "area": "3200 sq ft",
+    "bedrooms": "3",
+    "bathrooms": "2.5",
+    "description": "Penthouse with river views",
+    "url": "https://example.com/property/4",
+    "scraped_at": "2025-08-15T10:51:28.956213"
+  },
+  {
+    "title": "Family home in NDG",
+    "price": "$750000",
+    "location": "Montreal, QC H4A 3J5",
+    "area": "1800 sq ft",
+    "bedrooms": "3",
+    "bathrooms": "2",
+    "description": "Perfect family home",
+    "url": "https://example.com/property/5",
+    "scraped_at": "2025-08-15T10:51:28.956214"
+  },
+  {
+    "title": "Beautiful condo in downtown Montreal",
+    "price": "$450,000",
+    "location": "Montreal, QC H3B 1A1",
+    "area": "900 sq ft",
+    "bedrooms": "2",
+    "bathrooms": "1",
+    "description": "Modern condo with city views (duplicate)",
+    "url": "https://example.com/property/1-duplicate",
+    "scraped_at": "2025-08-15T10:51:28.956214"
+  },
+  {
+    "title": "",
+    "price": "Not a price",
+    "location": "",
+    "area": "unknown",
+    "bedrooms": "many",
+    "bathrooms": "some",
+    "description": "This record has quality issues",
+    "url": "https://example.com/property/bad",
+    "scraped_at": "2025-08-15T10:51:28.956215"
+  }
+]
