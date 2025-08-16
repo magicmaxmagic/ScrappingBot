@@ -48,6 +48,15 @@ nosetests.xml
 # Node.js / JavaScript
 node_modules/
 **/node_modules/
+
+# Logs - Exclure tous les fichiers de logs mais garder la structure
+logs/**/*.log
+logs/**/*.log.*
+logs_backup/
+*.log
+*.log.*
+server.log
+error.log
 .npm/
 .pnpm-store/
 .yarn/
@@ -213,3 +222,6 @@ user_data/
 private/
 local/
 personal/
+
+# Additional Python patterns
+*.pyc

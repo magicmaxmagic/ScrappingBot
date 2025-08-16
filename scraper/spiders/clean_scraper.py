@@ -50,7 +50,10 @@ class RealEstateScraper:
                 '--no-sandbox', 
                 '--disable-dev-shm-usage',
                 '--disable-blink-features=AutomationControlled',
-                '--disable-features=VizDisplayCompositor'
+                '--disable-features=VizDisplayCompositor',
+                '--disable-web-security',
+                '--disable-features=site-per-process',
+                '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             ]
         )
         return self
@@ -402,9 +405,27 @@ class RealEstateScraper:
             if not force_dom:
                 await self.capture_api(page)
             
-            # Navigate to page
-            await page.goto(search_url, wait_until="domcontentloaded", timeout=self.timeout_ms)
-            logger.info(f"Page loaded: {page.url}")
+            # Add random delay to simulate human behavior
+            await asyncio.sleep(2 + (time.time() % 3))
+            
+            # Navigate to page with retries
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await page.goto(search_url, wait_until="domcontentloaded", timeout=self.timeout_ms)
+                    logger.info(f"Page loaded: {page.url}")
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    logger.warning(f"Navigation attempt {attempt + 1} failed, retrying...")
+                    await asyncio.sleep(5 + attempt * 2)
+            
+            # Simulate human behavior - scroll and mouse movements
+            await page.mouse.move(100, 100)
+            await asyncio.sleep(1)
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 4)")
+            await asyncio.sleep(2)
             
             # Check for WAF block immediately
             is_blocked, block_reason = await self.detect_waf_block(page)
@@ -414,13 +435,14 @@ class RealEstateScraper:
                 logger.warning(f"WAF blocked: {block_reason}")
                 return {"blocked": True, "reason": block_reason}
             
-            # Wait for dynamic content
+            # Wait for dynamic content with longer timeout
             try:
-                await page.wait_for_load_state("networkidle", timeout=10000)
+                await page.wait_for_load_state("networkidle", timeout=15000)
             except:
                 logger.info("Networkidle timeout - continuing")
             
-            await asyncio.sleep(2)  # Allow API calls to complete
+            # Additional wait for API calls to complete
+            await asyncio.sleep(3 + (time.time() % 2))
             
             listings = []
             strategy = "blocked"

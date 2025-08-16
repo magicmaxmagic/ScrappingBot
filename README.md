@@ -159,9 +159,55 @@ ScrappingBot/
 # Tests automatisés
 docker-compose exec api python -m pytest tests/
 
+# Suite rapide locale (sans docker) – seulement tests unitaires rapides
+python tests/run_tests.py
+
+# Suite complète (incluant futurs tests marqués)
+python tests/run_tests.py --all
+
 # Health check
 curl http://localhost:8787/health
 ```
+
+### Marqueurs Pytest
+
+Les marqueurs définis dans `pytest.ini` : `unit`, `integration`, `slow`, `performance`.
+
+Par défaut (voir addopts), on exécute uniquement : non `integration` ET non `performance` ET non `slow`.
+
+Commandes utiles :
+
+```bash
+# Suite rapide (par défaut)
+pytest
+
+# Ajouter les tests d'intégration
+pytest -m integration
+
+# Intégration + performance
+pytest -m "integration or performance"
+
+# Tout (peut être long)
+pytest -m "integration or performance or slow or unit"
+```
+
+### Politique Tests Légers
+
+Le dépôt a été fortement allégé : anciens énormes scripts shell (>5k lignes) et fichiers de
+tests placeholders ont été supprimés. Ajoutez uniquement des tests courts, ciblés. Objectif:
+<2s pour la suite rapide. Marquez tout test coûteux avec `integration`, `slow` ou `performance`.
+
+Scripts supprimés (remplacés par les commandes Docker natives): deploy.sh, start.sh, stop.sh,
+shutdown.sh, monitor.sh, manage-logs.sh, health-check.sh et duplicatas.
+Utilisation recommandée :
+
+```bash
+docker-compose up -d        # démarrer
+docker-compose down         # arrêter
+docker-compose logs -f api  # logs d'un service
+```
+
+Besoin d'un script ? Limitez-le à <100 lignes et documentez-le ici.
 
 ## Production
 
@@ -177,8 +223,10 @@ docker-compose exec postgres pg_dump -U scrappingbot_user scrappingbot > backup.
 
 MIT - Voir LICENSE pour détails.
 
-# API
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+### Configuration API (exemple variable CORS)
+
+```bash
+export CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
 ```
 
 ### Scaling et Performance

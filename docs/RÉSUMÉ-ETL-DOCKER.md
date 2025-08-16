@@ -1,14 +1,16 @@
-# 🎉 ETL Docker Integration - RÉSUMÉ
+# ETL Docker Integration - RÉSUMÉ
 
-## ✅ Ce qui a été créé
+## Ce qui a été créé
 
 ### 1. Service Docker ETL
+
 - **Service**: `etl` dans `docker-compose.yml`
 - **Port**: 8788 (API ETL)
 - **Image**: Construite avec `docker/Dockerfile.etl`
 - **Dépendances**: PostgreSQL, Redis, Scraper
 
 ### 2. Configuration Docker
+
 ```yaml
 # dans docker-compose.yml
 etl:
@@ -25,11 +27,13 @@ etl:
 ```
 
 ### 3. Scripts d'automatisation
+
 - `scripts/start-with-etl.sh` - Lancement complet avec ETL
 - `scripts/test-etl-docker.sh` - Test du service ETL Docker
 - `docker/entrypoints/etl-entrypoint.sh` - Point d'entrée container
 
 ### 4. Commandes Make ajoutées
+
 ```bash
 # Gestion des services ETL Docker
 make etl-build          # Construire l'image ETL
@@ -51,13 +55,15 @@ make up                 # Services principaux
 ```
 
 ### 5. Configuration et documentation
+
 - `config/etl.conf` - Configuration détaillée ETL
 - `docker-compose.override.yml` - Config développement
 - `docker/README-ETL.md` - Documentation Docker ETL
 
-## 🚀 Utilisation
+## Utilisation
 
 ### Démarrage rapide
+
 ```bash
 # Option 1: Script automatique
 ./scripts/start-with-etl.sh
@@ -70,6 +76,7 @@ docker-compose up -d postgres redis api scraper etl
 ```
 
 ### Test du service ETL
+
 ```bash
 # Test complet automatique
 ./scripts/test-etl-docker.sh
@@ -79,14 +86,16 @@ make etl-docker-test
 ```
 
 ### Accès aux services
-- **ETL API**: http://localhost:8788
-- **ETL Documentation**: http://localhost:8788/docs
-- **PostgreSQL**: localhost:5432
-- **API principale**: http://localhost:8787
 
-## 🔍 Vérification
+- **ETL API**: [http://localhost:8788](http://localhost:8788)
+- **ETL Documentation**: [http://localhost:8788/docs](http://localhost:8788/docs)
+- **PostgreSQL**: localhost:5432
+- **API principale**: [http://localhost:8787](http://localhost:8787)
+
+## Vérification
 
 ### Health checks
+
 ```bash
 # Service ETL
 curl http://localhost:8788/health
@@ -96,6 +105,7 @@ docker-compose ps
 ```
 
 ### Logs
+
 ```bash
 # Logs ETL uniquement
 make etl-logs
@@ -104,7 +114,7 @@ make etl-logs
 docker-compose logs -f
 ```
 
-## 🎯 Points clés
+## Points clés
 
 1. **Service ETL complètement intégré** dans l'écosystème Docker
 2. **API ETL accessible** sur le port 8788 avec documentation Swagger
@@ -113,33 +123,37 @@ docker-compose logs -f
 5. **Monitoring et debugging** intégrés avec health checks et logs
 6. **Pipeline ETL complet** disponible via commandes Make ou API REST
 
-## 🔄 Workflow recommandé
+## Workflow recommandé
 
 1. **Développement local**:
+
    ```bash
    make etl-demo                # Test avec données d'exemple
    make etl-validate           # Validation des composants
    ```
 
 2. **Test avec Docker**:
+
    ```bash
    make etl-build              # Construire l'image
    make etl-docker-demo        # Test dans container
    ```
 
 3. **Déploiement complet**:
+
    ```bash
    make up-all                 # Tous les services
    make etl-docker-test        # Validation complète
    ```
 
-## ✅ Résultat
+## Résultat
 
 Vous avez maintenant un **pipeline ETL complètement dockerisé** qui:
-- ✅ Se lance automatiquement avec les autres services
-- ✅ Expose une API REST sur le port 8788
-- ✅ Traite les données entre le scraper et PostgreSQL
-- ✅ Inclut monitoring, validation et debugging
-- ✅ Est configurable et facilement déployable
 
-**Le système ETL est maintenant parfaitement intégré à l'architecture Docker !** 🎉
+- Se lance automatiquement avec les autres services
+- Expose une API REST sur le port 8788
+- Traite les données entre le scraper et PostgreSQL
+- Inclut monitoring, validation et debugging
+- Est configurable et facilement déployable 
+
+

@@ -8,7 +8,7 @@
     "bathrooms": "1",
     "description": "Modern condo with city views",
     "url": "https://example.com/property/1",
-    "data_hash": 4440478393461456416
+    "data_hash": 2544858865433775374
   },
   {
     "title": "Spacious house in Westmount",
@@ -19,7 +19,7 @@
     "bathrooms": "3",
     "description": "Victorian style house with garden",
     "url": "https://example.com/property/2",
-    "data_hash": -4854540356404295373
+    "data_hash": 3738957499411556391
   },
   {
     "title": "Studio apartment near McGill",
@@ -30,7 +30,7 @@
     "bathrooms": "1",
     "description": "Perfect for students",
     "url": "https://example.com/property/3",
-    "data_hash": 954777167721443668
+    "data_hash": -3556370700592725734
   },
   {
     "title": "Luxury penthouse Old Montreal",
@@ -41,7 +41,7 @@
     "bathrooms": "2.5",
     "description": "Penthouse with river views",
     "url": "https://example.com/property/4",
-    "data_hash": 319745398991055161
+    "data_hash": 5006912508745455047
   },
   {
     "title": "Family home in NDG",
@@ -52,7 +52,7 @@
     "bathrooms": "2",
     "description": "Perfect family home",
     "url": "https://example.com/property/5",
-    "data_hash": -2956921724262455455
+    "data_hash": -3470060103393246946
   },
   {
     "title": "Beautiful condo in downtown Montreal",
@@ -63,6 +63,6 @@
     "bathrooms": "1",
     "description": "Modern condo with city views (duplicate)",
     "url": "https://example.com/property/1-duplicate",
-    "data_hash": 4440478393461456416
+    "data_hash": 2544858865433775374
   }
 ]

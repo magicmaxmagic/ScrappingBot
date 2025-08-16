@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "stats": {
+    "extracted": 2,
+    "transformed": 2,
+    "deduplicated": 2,
+    "valid": 2,
+    "invalid": 0,
+    "loaded": 2
+  },
+  "execution_time": 0.014008,
+  "timestamp": "2025-08-15T20:01:46.992415"
+}

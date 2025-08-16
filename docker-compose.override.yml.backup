@@ -1,0 +1,31 @@
+# Docker Compose Override pour développement ETL
+
+services:
+  # Configuration de développement pour ETL
+  etl:
+    environment:
+      - ETL_LOG_LEVEL=DEBUG
+      - ETL_MODE=development
+    volumes:
+      # Monter le code source pour le développement
+      - ./etl:/app/etl:rw
+      - ./scripts:/app/scripts:rw
+    # En développement, on peut overrider le command
+    # command: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "etl/api.py"]
+    ports:
+      - "8788:8788"
+      # - "5678:5678"  # Port pour le debugging
+    # Redémarrage automatique en cas de changement
+    restart: unless-stopped
+
+  # Configuration de développement pour la base de données
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_LOG_STATEMENT=all  # Pour débugger les requêtes
+    
+  # Configuration de développement pour Redis
+  redis:
+    ports:
+      - "6379:6379"

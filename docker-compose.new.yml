@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: scrapping_bot_postgres
+    environment:
+      POSTGRES_DB: scrapping_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - scrapping_bot_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scrapping_bot"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # NestJS Backend
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: scrapping_bot_backend
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: password123
+      DATABASE_NAME: scrapping_bot
+      JWT_SECRET: your-super-secret-jwt-key-here
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - scrapping_bot_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: scrapping_bot_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - scrapping_bot_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  scrapping_bot_network:
+    driver: bridge

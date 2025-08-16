@@ -8,7 +8,7 @@
     "bathrooms": "1",
     "description": "Modern condo with city views",
     "url": "https://example.com/property/1",
-    "scraped_at": "2025-08-15T10:51:28.956189"
+    "scraped_at": "2025-08-15T14:26:54.096987"
   },
   {
     "title": "Spacious house in Westmount",
@@ -19,7 +19,7 @@
     "bathrooms": "3",
     "description": "Victorian style house with garden",
     "url": "https://example.com/property/2",
-    "scraped_at": "2025-08-15T10:51:28.956210"
+    "scraped_at": "2025-08-15T14:26:54.096994"
   },
   {
     "title": "Studio apartment near McGill",
@@ -30,7 +30,7 @@
     "bathrooms": "1",
     "description": "Perfect for students",
     "url": "https://example.com/property/3",
-    "scraped_at": "2025-08-15T10:51:28.956212"
+    "scraped_at": "2025-08-15T14:26:54.096996"
   },
   {
     "title": "Luxury penthouse Old Montreal",
@@ -41,7 +41,7 @@
     "bathrooms": "2.5",
     "description": "Penthouse with river views",
     "url": "https://example.com/property/4",
-    "scraped_at": "2025-08-15T10:51:28.956213"
+    "scraped_at": "2025-08-15T14:26:54.096997"
   },
   {
     "title": "Family home in NDG",
@@ -52,7 +52,7 @@
     "bathrooms": "2",
     "description": "Perfect family home",
     "url": "https://example.com/property/5",
-    "scraped_at": "2025-08-15T10:51:28.956214"
+    "scraped_at": "2025-08-15T14:26:54.096998"
   },
   {
     "title": "Beautiful condo in downtown Montreal",
@@ -63,7 +63,7 @@
     "bathrooms": "1",
     "description": "Modern condo with city views (duplicate)",
     "url": "https://example.com/property/1-duplicate",
-    "scraped_at": "2025-08-15T10:51:28.956214"
+    "scraped_at": "2025-08-15T14:26:54.096999"
   },
   {
     "title": "",
@@ -74,6 +74,6 @@
     "bathrooms": "some",
     "description": "This record has quality issues",
     "url": "https://example.com/property/bad",
-    "scraped_at": "2025-08-15T10:51:28.956215"
+    "scraped_at": "2025-08-15T14:26:54.097000"
   }
 ]

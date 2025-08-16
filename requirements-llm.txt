@@ -1,7 +1,21 @@
-# LLM-specific requirements for chatbot service
+# Large Language Model dependencies
+openai
+anthropic
+langchain
+langchain-community
+transformers
+torch
+sentence-transformers
+
 # Ollama client
-requests>=2.25.0
+ollama-python
+requests
+
 # Text processing
-nltk>=3.8
-# Additional NLP tools
-spacy>=3.4.0
+tiktoken
+nltk
+spacy
+
+# Vector databases
+chromadb
+faiss-cpu

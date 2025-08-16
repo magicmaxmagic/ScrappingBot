@@ -1,18 +1,60 @@
-# Runtime
-scrapy==2.11.1
-scrapy-playwright==0.0.33
-playwright==1.47.0
-pydantic==2.9.2
-PyYAML==6.0.1
-requests==2.32.3
-orjson==3.10.3
-httpx==0.27.2
-shapely==2.0.5
-geopandas==1.0.1
-asyncpg>=0.28.0
-psycopg2-binary>=2.9.7
-fastapi
-schedule
+# Core dependencies
+python-dotenv>=1.0.0
+pydantic>=2.9.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
 
-# Dev & tests
-pytest==8.3.2
+# Data processing & ETL
+pandas>=2.1.0
+numpy>=1.24.0
+orjson>=3.10.0
+PyYAML>=6.0.1
+
+# HTTP & Networking
+requests>=2.32.0
+httpx>=0.26.0,<0.27.0
+urllib3>=2.0.0
+
+# Database
+psycopg2-binary>=2.9.7
+asyncpg>=0.28.0
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Geospatial
+shapely>=2.0.5
+geopandas>=1.0.1
+geopy>=2.4.0
+
+# Web scraping
+scrapy>=2.11.0
+scrapy-playwright>=0.0.33
+playwright>=1.47.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+
+# Caching & Queue
+redis>=5.0.0
+celery>=5.3.0
+
+# Scheduling
+schedule>=1.2.0
+croniter>=1.4.0
+
+# Monitoring & Logging
+prometheus-client>=0.18.0
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+
+# Container & system utilities (needed by new tests)
+docker>=7.0.0
+psutil>=5.9.0
+
+# Development
+black>=23.9.0
+isort>=5.12.0
+flake8>=6.1.0
+mypy>=1.6.0
